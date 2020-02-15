@@ -16,6 +16,7 @@
       <e p="Algorithm" t="Include">
         <e p="HalfLife.cs" t="Include" />
         <e p="KfPairsStrategy.cs" t="Include" />
+        <e p="LinearFilter.cs" t="Include" />
         <e p="PriceSpread.cs" t="Include" />
       </e>
       <e p="bin" t="ExcludeRecursive" />
