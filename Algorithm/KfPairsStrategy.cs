@@ -45,21 +45,17 @@ namespace KfPairs.Algorithm
             var fst = AddEquity(_fstSym, Resolution.Minute);
             var snd = AddEquity(_sndSym, Resolution.Minute);
 
-            _leverage = 5m;
+            fst.SetDataNormalizationMode(DataNormalizationMode.Raw);
+            snd.SetDataNormalizationMode(DataNormalizationMode.Raw);
 
+            _leverage = 7.5m;
 
             fst.SetLeverage(_leverage);
             snd.SetLeverage(_leverage);
 
             _dir = Direction.Flat;
 
-            _lookBack = 1440;
-
-            _rollingSpread = new RollingWindow<decimal>(_lookBack);
-
-            _spreadStd = new StandardDeviation(_lookBack);
-            _priceSpread = new PriceSpread();
-            _halfLife = new HalfLife();
+            InitIndicators();
         }
 
 
@@ -68,9 +64,11 @@ namespace KfPairs.Algorithm
             var fstPrice = ToDouble(Securities[_fstSym].Close);
             var sndPrice = ToDouble(Securities[_sndSym].Close);
 
+            if (data == null) return;
+
             UpdateIndicators(fstPrice, sndPrice);
 
-            if (!IsIndicatorsReady()) return;
+            if (!AreIndicatorsReady()) return;
 
             if (!Portfolio.Invested)
             {
@@ -87,6 +85,16 @@ namespace KfPairs.Algorithm
             PlotHalfLife();
         }
 
+        private void InitIndicators()
+        {
+            _lookBack = 1440;
+
+            _rollingSpread = new RollingWindow<decimal>(_lookBack);
+            _spreadStd = new StandardDeviation(_lookBack);
+            _priceSpread = new PriceSpread();
+            _halfLife = new HalfLife();
+        }
+
         private void UpdateIndicators(double fstPrice, double sndPrice)
         {
             _priceSpread.Update(fstPrice, sndPrice);
@@ -101,7 +109,7 @@ namespace KfPairs.Algorithm
             _halfLife.Update(Convert.ToDouble(prevSpread), Convert.ToDouble(currSpread));
         }
 
-        private bool IsIndicatorsReady()
+        private bool AreIndicatorsReady()
         {
             return _rollingSpread.IsReady && _spreadStd.IsReady;
         }
@@ -150,6 +158,7 @@ namespace KfPairs.Algorithm
                 _startTime = Time;
             }
         }
+
 
         private void ExitPosition()
         {
