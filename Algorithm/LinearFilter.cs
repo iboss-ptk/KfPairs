@@ -28,7 +28,7 @@ namespace KfPairs.Algorithm
             _kalmanFilter = new SquareRootFilter(initStateEstimate, initStateCov);
         }
         
-        public void Update(double y, double x)
+        public void Update(double x, double y)
         {
             var measurement = Matrix(new[,]
             {
