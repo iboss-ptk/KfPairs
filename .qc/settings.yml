@@ -1,10 +1,10 @@
 --- !ruby/struct:Qc::ProjectSettings
 project_id: 3899983
 file_extensions: cs
-last_sync_at: 2020-02-15 17:49:38.549107000 +07:00
-last_compile_id: 4d59910e7cbf7cf13d006ac7bbf7437b-fc26356226fe13112c94784eec4d69e3
-last_backtest_id: fae1dbdbfea69bcc81d690c59e3ba11c
+last_sync_at: 2020-02-15 22:04:41.754258000 +07:00
+last_compile_id: 4d402291f46a4cb14387853289032efc-cf7ec52cd631e13a40735760636c0b67
+last_backtest_id: a2fd9bfc1ce5b2d7eac5aad46782ece5
 ignored_files:
 - AssemblyInfo.cs
 name: 
-execution_count: 6
+execution_count: 8

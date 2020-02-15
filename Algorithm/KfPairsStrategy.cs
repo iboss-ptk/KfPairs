@@ -65,73 +65,109 @@ namespace KfPairs.Algorithm
 
         public override void OnData(Slice data)
         {
-            var sykPrice = ToDouble(Securities[_fstSym].Close);
-            var baxPrice = ToDouble(Securities[_sndSym].Close);
+            var fstPrice = ToDouble(Securities[_fstSym].Close);
+            var sndPrice = ToDouble(Securities[_sndSym].Close);
 
-            _priceSpread.Update(sykPrice, baxPrice);
+            UpdateIndicators(fstPrice, sndPrice);
 
+            if (!IsIndicatorsReady()) return;
 
-            var fstRation = _priceSpread.FstRation * ToDouble(_leverage) * 0.8;
-            var sndRation = _priceSpread.SndRation * ToDouble(_leverage) * 0.8;
-            var spread = _priceSpread.Spread;
-
-            Plot("state", "slope", _priceSpread.Slope);
-            Plot("state", "intercept", _priceSpread.Intercept);
-
-            _rollingSpread.Add(spread);
-
-            if (!_rollingSpread.IsReady)
+            if (!Portfolio.Invested)
             {
-                return;
+                TakePosition();
             }
+
+            if (Portfolio.Invested)
+            {
+                ExitPosition();
+            }
+
+            PlotState();
+            PlotSpread(_priceSpread.Spread, _spreadStd.Current.Value);
+            PlotHalfLife();
+        }
+
+        private void UpdateIndicators(double fstPrice, double sndPrice)
+        {
+            _priceSpread.Update(fstPrice, sndPrice);
+            _rollingSpread.Add(_priceSpread.Spread);
+            _spreadStd.Update(Time, _priceSpread.Spread);
+
+            if (!_rollingSpread.IsReady) return;
 
             var currSpread = _rollingSpread[0];
             var prevSpread = _rollingSpread[1];
 
             _halfLife.Update(Convert.ToDouble(prevSpread), Convert.ToDouble(currSpread));
+        }
 
-            _spreadStd.Update(data.Time, spread);
-            var bound = _spreadStd.Current.Value;
+        private bool IsIndicatorsReady()
+        {
+            return _rollingSpread.IsReady && _spreadStd.IsReady;
+        }
 
+        private void PlotState()
+        {
+            Plot("state", "slope", _priceSpread.Slope);
+            Plot("state", "intercept", _priceSpread.Intercept);
+        }
+
+        private void PlotSpread(decimal spread, decimal bound)
+        {
             Plot("Spread", "spread", spread);
             Plot("Spread", "upper", bound);
             Plot("Spread", "lower", -bound);
+        }
 
-            if (!Portfolio.Invested)
+        private void PlotHalfLife()
+        {
+            Plot("half life", "half life", _halfLife.Period);
+        }
+
+        private void TakePosition()
+        {
+            var spread = _priceSpread.Spread;
+            var bound = _spreadStd.Current.Value;
+
+            var fstRation = _priceSpread.FstRation * ToDouble(_leverage) * 0.8;
+            var sndRation = _priceSpread.SndRation * ToDouble(_leverage) * 0.8;
+
+            var currSpread = _rollingSpread[0];
+            var prevSpread = _rollingSpread[1];
+
+            if (spread >= bound && prevSpread < currSpread)
             {
-                if (spread >= bound && prevSpread < currSpread)
-                {
-                    SetHoldings(_fstSym, -fstRation);
-                    SetHoldings(_sndSym, sndRation);
-                    _dir = Direction.Down;
-                    _startTime = Time;
-                }
-                else if (spread <= -bound && prevSpread > currSpread)
-                {
-                    SetHoldings(_fstSym, fstRation);
-                    SetHoldings(_sndSym, -sndRation);
-                    _dir = Direction.Up;
-                    _startTime = Time;
-                }
+                SetHoldings(_fstSym, -fstRation);
+                SetHoldings(_sndSym, sndRation);
+                _dir = Direction.Down;
+                _startTime = Time;
             }
-
-            if (Portfolio.Invested)
+            else if (spread <= -bound && prevSpread > currSpread)
             {
-                var exitBoundVal = 0.5m * bound;
+                SetHoldings(_fstSym, fstRation);
+                SetHoldings(_sndSym, -sndRation);
+                _dir = Direction.Up;
+                _startTime = Time;
+            }
+        }
 
-                var isUpPastMean = _dir == Direction.Up && spread >= -exitBoundVal;
-                var isDownPastMean = _dir == Direction.Down && spread <= exitBoundVal;
+        private void ExitPosition()
+        {
+            var spread = _priceSpread.Spread;
+            var bound = _spreadStd.Current.Value;
 
-                var holdingPeriod = Time - _startTime;
+            var exitBoundVal = 0.5m * bound;
 
-                var isHoldingTooLong = Convert.ToDecimal(holdingPeriod.TotalMinutes) > _halfLife.Period * 10m;
+            var isUpPastMean = _dir == Direction.Up && spread >= -exitBoundVal;
+            var isDownPastMean = _dir == Direction.Down && spread <= exitBoundVal;
 
-                Plot("half life", "half life", _halfLife.Period);
+            var holdingPeriod = Time - _startTime;
 
-                if (isUpPastMean || isDownPastMean || isHoldingTooLong)
-                {
-                    Liquidate();
-                }
+            var isHoldingTooLong = Convert.ToDecimal(holdingPeriod.TotalMinutes) > _halfLife.Period * 10m;
+
+            if (isUpPastMean || isDownPastMean || isHoldingTooLong)
+            {
+                Liquidate();
             }
         }
     }
