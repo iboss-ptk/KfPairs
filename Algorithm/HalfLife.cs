@@ -16,7 +16,10 @@ namespace KfPairs.Algorithm
         public void Update(double prev, double curr)
         {
             _linearFilter.Update(prev, curr - prev);
-            Period = Convert.ToDecimal(-Math.Log(2) / _linearFilter.Slope);
+
+            Period = _linearFilter.Slope == 0
+                ? Decimal.MaxValue
+                : Convert.ToDecimal(-Math.Log(2) / _linearFilter.Slope);
         }
     }
 }
