@@ -165,7 +165,7 @@ namespace KfPairs.Algorithm
             var spread = _priceSpread.Spread;
             var bound = _spreadStd.Current.Value;
 
-            var exitBoundVal = 0.5m * bound;
+            var exitBoundVal = 0.75m * bound;
 
             var isUpPastMean = _dir == Direction.Up && spread >= -exitBoundVal;
             var isDownPastMean = _dir == Direction.Down && spread <= exitBoundVal;
