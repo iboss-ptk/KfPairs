@@ -140,17 +140,14 @@ namespace KfPairs.Algorithm
             var fstRation = _priceSpread.FstRation * ToDouble(_leverage) * 0.8;
             var sndRation = _priceSpread.SndRation * ToDouble(_leverage) * 0.8;
 
-            var currSpread = _rollingSpread[0];
-            var prevSpread = _rollingSpread[1];
-
-            if (spread >= bound && prevSpread < currSpread)
+            if (spread >= bound)
             {
                 SetHoldings(_fstSym, -fstRation);
                 SetHoldings(_sndSym, sndRation);
                 _dir = Direction.Down;
                 _startTime = Time;
             }
-            else if (spread <= -bound && prevSpread > currSpread)
+            else if (spread <= -bound)
             {
                 SetHoldings(_fstSym, fstRation);
                 SetHoldings(_sndSym, -sndRation);
@@ -172,7 +169,7 @@ namespace KfPairs.Algorithm
 
             var holdingPeriod = Time - _startTime;
 
-            var isHoldingTooLong = Convert.ToDecimal(holdingPeriod.TotalMinutes) > _halfLife.Period * 10m;
+            var isHoldingTooLong = Convert.ToDecimal(holdingPeriod.TotalMinutes) > _halfLife.Period * 5m;
 
             if (isUpPastMean || isDownPastMean || isHoldingTooLong)
             {
