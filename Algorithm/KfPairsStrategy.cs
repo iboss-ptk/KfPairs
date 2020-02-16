@@ -123,8 +123,13 @@ namespace KfPairs.Algorithm
         private void PlotSpread(decimal spread, decimal bound)
         {
             Plot("Spread", "spread", spread);
+
             Plot("Spread", "upper", bound);
             Plot("Spread", "lower", -bound);
+
+            var exitBound = ExitBound();
+            Plot("Spread", "upper exit", exitBound);
+            Plot("Spread", "lower exit", -exitBound);
         }
 
         private void PlotHalfLife()
@@ -160,22 +165,22 @@ namespace KfPairs.Algorithm
         private void ExitPosition()
         {
             var spread = _priceSpread.Spread;
-            var bound = _spreadStd.Current.Value;
+            var exitBound = ExitBound();
 
-            var elapsedTime = Time - _startTime;
-            var exitBoundVal = (Convert.ToDecimal(elapsedTime.TotalMinutes) / _halfLife.Period) * bound;
+            var isUpPastMean = _dir == Direction.Up && spread >= -exitBound;
+            var isDownPastMean = _dir == Direction.Down && spread <= exitBound;
 
-            var isUpPastMean = _dir == Direction.Up && spread >= -exitBoundVal;
-            var isDownPastMean = _dir == Direction.Down && spread <= exitBoundVal;
-
-            var holdingPeriod = Time - _startTime;
-
-            var isHoldingTooLong = Convert.ToDecimal(holdingPeriod.TotalMinutes) > _halfLife.Period * 5m;
-
-            if (isUpPastMean || isDownPastMean || isHoldingTooLong)
+            if (isUpPastMean || isDownPastMean)
             {
                 Liquidate();
             }
+        }
+
+        private decimal ExitBound()
+        {
+            var bound = _spreadStd.Current.Value;
+            var elapsedTime = Time - _startTime;
+            return (Convert.ToDecimal(elapsedTime.TotalMinutes) / _halfLife.Period) * bound;
         }
     }
 }
